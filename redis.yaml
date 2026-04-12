@@ -1,0 +1,48 @@
+services:
+  # ──────────────────────────────────────────
+  # REDIS
+  # ──────────────────────────────────────────
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  # ──────────────────────────────────────────
+  # REDIS COMMANDER (GUI)
+  # ──────────────────────────────────────────
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+
+# ──────────────────────────────────────────
+# VOLUMES & NETWORKS
+# ──────────────────────────────────────────
+
+volumes:
+  redis-data:
+
+networks:
+  backend:
+    driver: bridge
